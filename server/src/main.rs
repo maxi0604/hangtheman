@@ -28,21 +28,16 @@ fn main() {
         .unwrap_or(1337);
     println!("Hello, world!");
     let n_players = 2;
-    let player_conns = accept_n_connections(n_players, port);
-    let mut readers_writers = player_conns
-        .iter()
-        .map(|(stream, _)| {
-            (
-                BufReader::new(stream.clone()),
-                BufWriter::new(stream.clone()),
-            )
-        })
-        .collect::<Vec<_>>();
+    let mut player_conns = accept_n_connections(n_players, port);
     loop {
         let mut session = GameSession::generate(10);
+        player_conns.iter_mut().for_each(|(_, w)| {
+            w.write_all("Eine neue Runde beginnt.\n".as_bytes());
+            w.flush();
+        });
         println!("Geheimer Debug-Output. Das Wort ist \"{}\"", session.word());
         let result = 'outer: loop {
-            for (r, w) in readers_writers.iter_mut() {
+            for (r, w) in player_conns.iter_mut() {
                 w.write_all(
                     format!(
                         "Aktueller Stand: {}. Versuche: {}/{}\n",
@@ -83,20 +78,21 @@ fn main() {
             }
         };
         let message = match result {
-            GuessResult::Won => format!("Gewonnen. Das Wort war {}.\n", session.word()),
+            GuessResult::Won => format!("\nGewonnen. Das Wort war {}.\n\n", session.word()),
             GuessResult::Lost => {
-                format!("Verloren. Skill Issue. Das Wort war {}.\n", session.word())
+                format!("\nVerloren. Skill Issue. Das Wort war {}.\n\n", session.word())
             }
             GuessResult::Continue => unreachable!(),
         };
 
-        readers_writers.iter_mut().for_each(|(_, w)| {
+        player_conns.iter_mut().for_each(|(_, w)| {
             w.write_all(message.as_bytes());
+            w.flush();
         });
     }
 }
 
-fn accept_n_connections(n: usize, port: u16) -> Vec<(TcpStream, SocketAddr)> {
+fn accept_n_connections(n: usize, port: u16) -> Vec<(BufReader<TcpStream>, BufWriter<TcpStream>)> {
     let bind_addr = format!("[::]:{port}");
     let listener = TcpListener::bind(bind_addr.as_str())
         .expect(format!("Can't bind to {}", bind_addr.as_str()).as_str());
@@ -104,10 +100,26 @@ fn accept_n_connections(n: usize, port: u16) -> Vec<(TcpStream, SocketAddr)> {
 
     while player_conns.len() < n {
         match listener.accept() {
-            Ok(conn) => player_conns.push(conn),
-            Err(err) => eprintln!("{}", err),
+            Ok((stream, addr)) => {
+                let Ok(rstream) = stream.try_clone() else {
+                    continue;
+                };
+                let Ok(wstream) = stream.try_clone() else {
+                    continue;
+                };
+                let mut reader = BufReader::new(rstream);
+                let mut writer = BufWriter::new(wstream);
+                writer.write_all(format!("Vielen Dank, dass Sie sich für HangTheMan {} entschieden haben.\n", env!("CARGO_PKG_VERSION")).as_bytes());
+                writer.write_all("Wir wünschen Ihnen einen angenehmen Aufenthalt.\n".as_bytes());
+                writer.write_all(format!("Es sind bereits {}/{} Spieler*innen verbunden.\n\n", player_conns.len() + 1, n).as_bytes());
+                writer.flush();
+                println!("Neue Verbindung von {}", addr);
+                player_conns.push((reader, writer));
+            }
+            Err(err) => { eprintln!("{}", err); continue; },
         }
     }
+
     player_conns
 }
 
