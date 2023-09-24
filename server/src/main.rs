@@ -15,6 +15,10 @@ const WORDS: &[&str] = &[
     "Pipeline",
     "Rechner",
     "Mikroarchitektur",
+    "Krabbe",
+    "Taschenratte",
+    "Keith",
+    "C++",
 ];
 
 fn main() {
