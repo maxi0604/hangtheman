@@ -40,10 +40,11 @@ fn main() {
             for (r, w) in player_conns.iter_mut() {
                 w.write_all(
                     format!(
-                        "Aktueller Stand: {}. Versuche: {}/{}\n",
+                        "Aktueller Stand: {}. Versuche: {}/{}. Bereits geraten:{}\n",
                         session.underscore_string(),
                         session.fails(),
-                        session.max_fails()
+                        session.max_fails(),
+                        session.guessed_letters()
                     )
                     .as_bytes(),
                 );
@@ -67,10 +68,11 @@ fn main() {
 
                 w.write_all(
                     format!(
-                        "Aktueller Stand: {}. Versuche: {}/{}\n",
+                        "Aktueller Stand: {}. Versuche: {}/{}. Bereits geraten:{}\n",
                         session.underscore_string(),
                         session.fails(),
-                        session.max_fails()
+                        session.max_fails(),
+                        session.guessed_letters()
                     )
                     .as_bytes(),
                 );
@@ -203,5 +205,9 @@ impl GameSession<'_> {
 
     pub fn word(&self) -> &str {
         self.word
+    }
+    
+    pub fn guessed_letters(&self) -> String {
+        self.guessed_chars.iter().fold(String::new(), |acc, c| acc + " " + c)
     }
 }
