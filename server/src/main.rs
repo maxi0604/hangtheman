@@ -163,7 +163,7 @@ impl GameSession<'_> {
     }
 
     pub fn guess_word(&mut self, s: &str) -> GuessResult {
-        if s == self.word {
+        if s.to_lowercase() == self.word.to_lowercase() {
             return GuessResult::Won;
         } else {
             self.fails += 1;
