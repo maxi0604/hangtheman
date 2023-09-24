@@ -3,7 +3,7 @@ use std::collections::BTreeSet;
 use std::default::Default;
 use std::env;
 use std::io::{BufRead, BufReader, BufWriter, Write};
-use std::net::{SocketAddr, TcpListener, TcpStream};
+use std::net::{TcpListener, TcpStream};
 
 const WORDS: &[&str] = &[
     "Socket",
@@ -58,7 +58,7 @@ fn main() {
                 let result = if response.chars().count() == 1 {
                     session.guess_char(response.chars().next().unwrap())
                 } else {
-                    session.guess_word(&response)
+                    session.guess_word(response)
                 };
 
                 if result != GuessResult::Continue {
@@ -95,7 +95,7 @@ fn main() {
 fn accept_n_connections(n: usize, port: u16) -> Vec<(BufReader<TcpStream>, BufWriter<TcpStream>)> {
     let bind_addr = format!("[::]:{port}");
     let listener = TcpListener::bind(bind_addr.as_str())
-        .expect(format!("Can't bind to {}", bind_addr.as_str()).as_str());
+        .unwrap_or_else(|_| panic!("Can't bind to {}", bind_addr.as_str()));
     let mut player_conns: Vec<_> = vec![];
 
     while player_conns.len() < n {
@@ -107,7 +107,7 @@ fn accept_n_connections(n: usize, port: u16) -> Vec<(BufReader<TcpStream>, BufWr
                 let Ok(wstream) = stream.try_clone() else {
                     continue;
                 };
-                let mut reader = BufReader::new(rstream);
+                let reader = BufReader::new(rstream);
                 let mut writer = BufWriter::new(wstream);
                 writer.write_all(format!("Vielen Dank, dass Sie sich für HangTheMan {} entschieden haben.\n", env!("CARGO_PKG_VERSION")).as_bytes());
                 writer.write_all("Wir wünschen Ihnen einen angenehmen Aufenthalt.\n".as_bytes());
