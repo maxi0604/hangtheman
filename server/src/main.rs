@@ -17,8 +17,21 @@ const WORDS: &[&str] = &[
     "Mikroarchitektur",
     "Krabbe",
     "Taschenratte",
-    "Keith",
     "C++",
+    "Latenz",
+    "Durchsatz",
+    "Bitrate",
+    "UNIX",
+    "Befehlssatzarchitektur",
+    "Numerik",
+    "Gleichung",
+    "netcat",
+    "TCP",
+    "UDP",
+    "Frontend",
+    "Backend",
+    "RISC-V",
+    "Forward-Search"
 ];
 
 fn main() {
@@ -188,7 +201,7 @@ impl GameSession<'_> {
         self.word
             .chars()
             .map(|c| {
-                if self.guessed_chars.contains(&c.to_lowercase().to_string()) {
+                if self.guessed_chars.contains(&c.to_lowercase().to_string()) || !c.is_alphanumeric() {
                     c
                 } else {
                     '_'
