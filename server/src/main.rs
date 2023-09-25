@@ -27,7 +27,9 @@ fn main() {
         .and_then(|arg| arg.parse::<u16>().ok())
         .unwrap_or(1337);
     println!("Hello, world!");
-    let n_players = 2;
+    let n_players = env::args().nth(2)
+        .and_then(|arg| arg.parse::<usize>().ok())
+        .unwrap_or(2);
     let mut player_conns = accept_n_connections(n_players, port);
     loop {
         let mut session = GameSession::generate(10);
